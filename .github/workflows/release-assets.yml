@@ -1,0 +1,62 @@
+name: Attach verified v0.1.0 source assets
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-assets-v0.1.0
+  cancel-in-progress: false
+
+jobs:
+  assets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Fetch the already verified release tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          git init source
+          cd source
+          git remote add origin "https://github.com/${GH_REPO}.git"
+          git fetch --depth=1 origin refs/tags/v0.1.0:refs/tags/v0.1.0
+          # Refuse a moved tag: this job packages the macOS-verified commit only.
+          test "$(git rev-parse 'v0.1.0^{commit}')" = 78e716cff27a23044d295e71f301868ae608a621
+          git archive --format=tar.gz --prefix=personal-ai-workbench-0.1.0/ \
+            -o ../personal-ai-workbench-0.1.0-source.tar.gz v0.1.0
+      - name: Check archive and attach missing assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Local macOS packaging produced this exact hash before publication.
+          printf '%s  %s\n' \
+            043a5ea2447bfe92f2a58f9de636e9b81b6439b2052f73ae25698985710894be \
+            personal-ai-workbench-0.1.0-source.tar.gz > SHA256SUMS
+          sha256sum --check SHA256SUMS
+          test "$(gh release view v0.1.0 --json isDraft --jq .isDraft)" = false
+          test "$(gh release view v0.1.0 --json isPrerelease --jq .isPrerelease)" = true
+          # Retries validate existing assets instead of overwriting a published file.
+          for file in personal-ai-workbench-0.1.0-source.tar.gz SHA256SUMS; do
+            if gh release view v0.1.0 --json assets --jq '.assets[].name' | grep -Fxq "$file"; then
+              mkdir -p existing
+              gh release download v0.1.0 --pattern "$file" --dir existing
+              cmp "$file" "existing/$file"
+            else
+              gh release upload v0.1.0 "$file"
+            fi
+          done
+      - name: Download and verify the published assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir downloaded
+          gh release download v0.1.0 --pattern personal-ai-workbench-0.1.0-source.tar.gz --pattern SHA256SUMS --dir downloaded
+          cmp SHA256SUMS downloaded/SHA256SUMS
+          cd downloaded
+          sha256sum --check SHA256SUMS
