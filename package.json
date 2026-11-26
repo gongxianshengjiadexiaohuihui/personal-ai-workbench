@@ -1,0 +1,47 @@
+{
+  "name": "personal-ai-workbench",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "dev:web": "vite --host 127.0.0.1",
+    "build": "tsc -p tsconfig.server.json && vite build",
+    "start": "node --env-file-if-exists=.env dist/index.js",
+    "check": "tsc --noEmit && npm run build",
+    "verify": "tsx scripts/verify.ts",
+    "probe:codex": "tsx scripts/probe-codex.ts",
+    "probe:native": "tsx scripts/probe-native-controller.ts",
+    "probe:native:restart": "tsx scripts/probe-native-restart.ts",
+    "verify:native": "tsx scripts/verify-native-probe.ts",
+    "verify:dingtalk": "tsx scripts/verify-dingtalk-settings.ts",
+    "verify:projects": "tsx scripts/verify-projects.ts && tsx scripts/verify-multirepo.ts",
+    "verify:lifecycle": "tsx scripts/verify-lifecycle.ts",
+    "launchagent": "node scripts/launchagent.mjs",
+    "verify:native:controller": "tsx scripts/verify-native-controller.ts",
+    "verify:conversations": "tsx scripts/verify-conversations.ts",
+    "verify:release": "npm run check && node scripts/verify-release.mjs"
+  },
+  "dependencies": {
+    "@fastify/static": "^8.3.0",
+    "dingtalk-stream": "2.1.6-beta.1",
+    "fastify": "^5.6.2",
+    "qrcode": "^1.5.4",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.1.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vite": "^7.2.0"
+  }
+}
